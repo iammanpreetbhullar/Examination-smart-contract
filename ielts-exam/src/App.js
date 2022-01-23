@@ -5,6 +5,7 @@ import ModalFooter from 'react-bootstrap/esm/ModalFooter';
 import Form from 'react-bootstrap/Form';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import img from './ieltsfinal.png'
 
 class App extends React.Component {
     constructor(props) {
@@ -144,10 +145,10 @@ class App extends React.Component {
         }
     }
 
-
     showLoginModal = () => {
         this.setState({ isLoginVisible: true })
     }
+
     showSignUpModal = () => {
         this.setState({ isSignUpVisible: true })
     }
@@ -230,10 +231,6 @@ class App extends React.Component {
             () => { this.setState({ isLoginVisible: false }) });
     }
 
-    
-        
-    
-
     callContract = () => {
         alert(JSON.stringify(this.state.selectedQues))
         window.location.reload();
@@ -260,6 +257,12 @@ class App extends React.Component {
                         </div>
                     </Container>
                 </Navbar>
+                <div style={{ width: "100vw", height: "92vh" }}>
+                    <img src={img} height='400px' width='800px' style={{ marginTop: "130px", marginLeft: "150px", border: "3px solid white", borderRadius: "50px", boxShadow: "0px 0px 20px 0px white" }} />
+                    <div style={{ color: "white", float: "right", marginTop: "230px", marginRight: "70px", fontSize: "80px", width: "500px", textAlign: "center", fontWeight: "bold" }}>
+                        IELTS Online Exam
+                    </div>
+                </div>
                 {this.state.isLoginVisible !== false ?
                     <div>
                         <Modal size='md' aria-labelledby="contained-modal-title-vcenter"
