@@ -257,7 +257,7 @@ class App extends React.Component {
                         </div>
                     </Container>
                 </Navbar>
-                <div className='d-flex align-items-center justify-content-around' style={{ height:"92vh" }}>
+                <div className='d-flex align-items-center justify-content-around' style={{ height:"90vh" }}>
                     <div><img src={img} height='300px' width='700px' style={{ border: "3px solid white", borderRadius: "50px", boxShadow: "0px 0px 20px 0px white" }} />
                     </div>
                     <div style={{ color: "white", width:"30%", fontSize: "60px", textAlign: "center", fontWeight: "bold" }}>
