@@ -5,7 +5,10 @@ import ModalFooter from 'react-bootstrap/esm/ModalFooter';
 import Form from 'react-bootstrap/Form';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import img from './ieltsfinal.png'
+import img from './ieltsfinal.png';
+import logo from './logo.png';
+import { Cont_Addr, Cont_ABI } from './config';
+import Web3 from 'web3';
 
 class App extends React.Component {
     constructor(props) {
@@ -141,9 +144,28 @@ class App extends React.Component {
             optionChecked: false,
             uploadDisabled: true,
             selectedQues: [],
-            loggedInAsDisabled: true
+            loggedInAsDisabled: true,
+            currentAcc: "",
+            contracts: ""
         }
     }
+
+    componentDidMount = () => {
+        this.load();
+    }
+
+    load = async () => {
+        const web3 = new Web3('http://localhost:7545');
+        const account = await web3.eth.getAccounts();
+        this.setState({ currentAcc: account[0] })
+
+        const contract = new web3.eth.Contract(Cont_ABI, Cont_Addr);
+        this.setState({ contracts: contract })
+
+        const getValues = await contract.methods.getArray().call();
+        console.log(getValues)
+    }
+
 
     showLoginModal = () => {
         this.setState({ isLoginVisible: true })
@@ -241,6 +263,7 @@ class App extends React.Component {
             <div className='appMainDiv'>
                 <Navbar bg="warning" variant="light">
                     <Container>
+                        <img src={logo} height='50px' />
                         <Navbar.Brand >IELTS Online Examination</Navbar.Brand>
                         <Nav className="me-auto">
                             <Nav.Link onClick={this.showLoginModal}>Login</Nav.Link>
@@ -257,10 +280,10 @@ class App extends React.Component {
                         </div>
                     </Container>
                 </Navbar>
-                <div className='d-flex align-items-center justify-content-around' style={{ height:"90vh" }}>
-                    <div><img src={img} height='300px' width='700px' style={{ border: "3px solid white", borderRadius: "50px", boxShadow: "0px 0px 20px 0px white" }} />
+                <div className='d-flex align-items-center justify-content-around' style={{ height: "90vh" }}>
+                    <div><img src={img} style={{ border: "3px solid white", borderRadius: "50px", boxShadow: "0px 0px 20px 0px white" }} />
                     </div>
-                    <div style={{ color: "white", width:"30%", fontSize: "60px", textAlign: "center", fontWeight: "bold" }}>
+                    <div style={{ color: "white", width: "30%", fontSize: "50px", textAlign: "center", fontWeight: "bold" }}>
                         IELTS Online Exam
                     </div>
                 </div>
