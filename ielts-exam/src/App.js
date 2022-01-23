@@ -13,6 +13,7 @@ class App extends React.Component {
             isLoginVisible: false,
             isSignUpVisible: false,
             isQuestionsVisible: false,
+            isAlertVisible: false,
             userDetails:
             {
                 "firstName": "Manpreet",
@@ -24,10 +25,125 @@ class App extends React.Component {
                 "email": "",
                 "password": ""
             },
+            questions: [
+                {
+                    "id": 1,
+                    "text": "Q1. Select your age range.",
+                    "answered": false,
+                    optn: [
+                        {
+                            "op": "15-20",
+                            "seq": 1,
+                            "selected": false
+                        },
+                        {
+                            "op": "21-30",
+                            "seq": 2,
+                            "selected": false
+                        },
+                        {
+                            "op": "31-40",
+                            "seq": 3,
+                            "selected": false
+                        },
+                        {
+                            "op": "40 above",
+                            "seq": 4,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "id": 2,
+                    "text": "Q2. Select the capital of India.",
+                    "answered": false,
+                    optn: [
+                        {
+                            "op": "Mumbai",
+                            "seq": 1,
+                            "selected": false
+                        },
+                        {
+                            "op": "New-Delhi",
+                            "seq": 2,
+                            "selected": false
+                        },
+                        {
+                            "op": "Kolkata",
+                            "seq": 3,
+                            "selected": false
+                        },
+                        {
+                            "op": "Gujrat",
+                            "seq": 4,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "id": 3,
+                    "text": "Q3.Which is your favourit Car brand?",
+                    "answered": false,
+                    optn: [
+                        {
+                            "op": "Ferrari",
+                            "seq": 1,
+                            "selected": false
+                        },
+                        {
+                            "op": "Ford",
+                            "seq": 2,
+                            "selected": false
+                        },
+                        {
+                            "op": "Tesla",
+                            "seq": 3,
+                            "selected": false
+                        },
+                        {
+                            "op": "Hyundai",
+                            "seq": 4,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "id": 4,
+                    "text": "Q4. Which company introduced Windows operating system?",
+                    "answered": false,
+                    optn: [
+                        {
+                            "op": "Microsoft",
+                            "seq": 1,
+                            "selected": false
+                        },
+                        {
+                            "op": "Amazon",
+                            "seq": 2,
+                            "selected": false
+                        },
+                        {
+                            "op": "Meta",
+                            "seq": 3,
+                            "selected": false
+                        },
+                        {
+                            "op": "TCS",
+                            "seq": 4,
+                            "selected": false
+                        }
+                    ]
+                }
+            ],
             validated: false,
-            showModal: false
+            showModal: false,
+            optionChecked: false,
+            uploadDisabled: true,
+            selectedQues: [],
+            loggedInAsDisabled: true
         }
     }
+
 
     showLoginModal = () => {
         this.setState({ isLoginVisible: true })
@@ -37,7 +153,14 @@ class App extends React.Component {
     }
 
     handleShow = () => this.setState({ showModal: true })
-    handleClose = () => this.setState({ showModal: false })
+
+    handleClose = () => {
+        this.setState({ showModal: false })
+        this.setState({ isAlertVisible: false })
+        this.setState({ isLoginVisible: false })
+        this.setState({ isSignUpVisible: false })
+        this.setState({ isQuestionsVisible: false })
+    }
 
     handlechange = (event) => {
         const option = event.target.id;
@@ -53,11 +176,43 @@ class App extends React.Component {
         const copy = this.state.currentUser;
         copy[option] = value;
         this.setState({ currentUser: copy })
-
     }
 
-    signUp = () => {
-        this.setState({ isSignUpVisible: false })
+    questSubmit = () => {
+        let questions = this.state.questions;
+
+        questions.map(quest => {
+            quest.answered = true;
+            quest.optn.map(option => {
+                if (option.selected === true) {
+                    let obj = { "ques": quest.id, "op": option.seq };
+                    this.state.selectedQues.push(obj);
+                }
+            })
+        })
+
+        this.setState({ uploadDisabled: false })
+        this.handleClose();
+    }
+
+    optionSelect = (qId, opId) => {
+        let questions = this.state.questions;
+        questions.map(quest => {
+            if (quest.id === qId) {
+                quest.answered = true;
+                quest.optn.map(option => {
+                    if (option.seq === opId) {
+                        option.selected = true;
+                    }
+                    else {
+                        option.selected = false;
+                    }
+                })
+            }
+        })
+        this.setState({
+            questions
+        })
     }
 
     handleSubmit = (event) => {
@@ -66,19 +221,24 @@ class App extends React.Component {
             event.preventDefault();
             event.stopPropagation();
         }
-
         this.setState.validated(true);
     };
 
-    submitQues = () => {
-        this.setState({ isQuestionsVisible: false })
-
-    }
-
     login = () => {
+        this.setState({ loggedInAsDisabled: false });
         this.setState({ isQuestionsVisible: true },
-            () => { this.setState({ isLoginVisible: false }) })
+            () => { this.setState({ isLoginVisible: false }) });
     }
+
+    
+        
+    
+
+    callContract = () => {
+        alert(JSON.stringify(this.state.selectedQues))
+        window.location.reload();
+    }
+
     render() {
         return (
             <div className='appMainDiv'>
@@ -91,10 +251,13 @@ class App extends React.Component {
                         </Nav>
                         <Navbar.Toggle />
                         <Navbar.Collapse className="justify-content-end">
-                            <Navbar.Text>
-                                <a href="#login">{this.state.currentUser.firstName}</a>
+                            <Navbar.Text hidden={this.state.loggedInAsDisabled}>
+                                Logged In as:  <b>{this.state.currentUser.email}</b>
                             </Navbar.Text>
                         </Navbar.Collapse>
+                        <div className='uploadBtn'>
+                            <Button hidden={this.state.uploadDisabled} onClick={this.callContract}>Upload</Button>
+                        </div>
                     </Container>
                 </Navbar>
                 {this.state.isLoginVisible !== false ?
@@ -131,7 +294,7 @@ class App extends React.Component {
                                         </Form.Group>
                                     </Row>
                                     <div className="d-flex flex-row-reverse align-content-end">
-                                        <Button type="close" className='btn btn-secondary' onClick={this.handleClose}>Cancel</Button>
+                                        <Button className='btn btn-secondary' onClick={this.handleClose}>Cancel</Button>
                                         <Button className='btn btn-warning mx-2' onClick={this.login}>Login</Button>
                                     </div>
                                 </Form>
@@ -194,135 +357,57 @@ class App extends React.Component {
                                     </Form.Group>
                                 </Row>
                                 <div className="d-flex flex-row-reverse align-content-end">
-                                    <Button type="close" className='btn btn-secondary' onClick={this.handleClose}>Cancel</Button>
-                                    <Button className='btn btn-warning mx-2' onClick={this.signUp}>Sign Up</Button>
+                                    <Button className='btn btn-secondary' onClick={this.handleClose}>Cancel</Button>
+                                    <Button className='btn btn-warning mx-2' onClick={this.handleClose}>Sign Up</Button>
                                 </div>
                             </Form>
                         </ModalBody>
                     </Modal>
                     : null}
                 {this.state.isQuestionsVisible !== false ?
-                    // <>
-                    //     {this.state.currentUser.email === this.state.userDetails.email && this.state.currentUser.password === this.state.userDetails.password ?
-                    <Modal size='xl' aria-labelledby="contained-modal-title-vcenter"
-                        centered show={this.handleShow} onHide={() => { this.setState({ isQuestionsVisible: false }) }} >
-                        <ModalHeader closeButton>
-                            <ModalTitle id="contained-modal-title-vcenter">
-                                Questionnaire
-                            </ModalTitle>
-                        </ModalHeader>
-                        <ModalBody>
-                            <Container fluid="md">
-                                <Row>
-                                    <Col className='md-12'>
-                                        <label id='q1'><b>Q1. Select your age range?</b></label>
-                                    </Col>
-                                </Row>
-                                <br />
-                                <Row xs={2} md={4} className='justify-content-center'>
-                                    <Col>
-                                        <input type="radio" id='option1'></input>
-                                        <label for="option1">15-20</label>
-                                    </Col>
-                                    <Col>
-                                        <input type="radio" id='option2'></input>
-                                        <label for="option2">21-30</label>
-                                    </Col>
-                                    <Col>
-                                        <input type="radio" id='option3'></input>
-                                        <label for="option3">31-40</label>
-                                    </Col>
-                                    <Col>
-                                        <input type="radio" id='option4'></input>
-                                        <label for="option4">40 above</label>
-                                    </Col>
-                                </Row>
-                                <br />
-                                <Row>
-                                    <Col className='md-12'>
-                                        <label id='q2'><b>Q2. Name the capital of India?</b></label>
-                                    </Col>
-                                </Row>
-                                <br />
-                                <Row xs={2} md={4} className='justify-content-center'>
-                                    <Col>
-                                        <input type="radio" id='option1'></input>
-                                        <label for="option1">Mumbai</label>
-                                    </Col>
-                                    <Col>
-                                        <input type="radio" id='option2'></input>
-                                        <label for="option2">New Delhi</label>
-                                    </Col>
-                                    <Col>
-                                        <input type="radio" id='option3'></input>
-                                        <label for="option3">Kolkata</label>
-                                    </Col>
-                                    <Col>
-                                        <input type="radio" id='option4'></input>
-                                        <label for="option4">Gujrat</label>
-                                    </Col>
-                                </Row>
-                                <br />
-                                <Row>
-                                    <Col className='md-12'>
-                                        <label id='q3'><b>Q3. Select your favourit Car maker?</b></label>
-                                    </Col>
-                                </Row>
-                                <br />
-                                <Row xs={2} md={4} className='justify-content-center'>
-                                    <Col>
-                                        <input type="radio" id='option1'></input>
-                                        <label for="option1">Ferrari</label>
-                                    </Col>
-                                    <Col>
-                                        <input type="radio" id='option2'></input>
-                                        <label for="option2">Ford</label>
-                                    </Col>
-                                    <Col>
-                                        <input type="radio" id='option3'></input>
-                                        <label for="option3">Volks Wagon</label>
-                                    </Col>
-                                    <Col>
-                                        <input type="radio" id='option4'></input>
-                                        <label for="option4">Hyundai</label>
-                                    </Col>
-                                </Row>
-                                <br />
-                                <Row>
-                                    <Col className='md-12'>
-                                        <label id='q4'><b>Q4. In which company would you like to work in future?</b></label>
-                                    </Col>
-                                </Row>
-                                <br />
-                                <Row xs={2} md={4} className='justify-content-center'>
-                                    <Col>
-                                        <input type="radio" id='option1'></input>
-                                        <label for="option1">Amazon</label>
-                                    </Col>
-                                    <Col>
-                                        <input type="radio" id='option2'></input>
-                                        <label for="option2">Microsoft</label>
-                                    </Col>
-                                    <Col>
-                                        <input type="radio" id='option3'></input>
-                                        <label for="option3">Meta</label>
-                                    </Col>
-                                    <Col>
-                                        <input type="radio" id='option4'></input>
-                                        <label for="option4">TCS</label>
-                                    </Col>
-                                </Row>
-                            </Container>
-                        </ModalBody>
-                        <ModalFooter>
-                            <div className="d-flex flex-row-reverse align-content-end">
-                                <Button type="close" className='btn btn-secondary' onClick={this.submitQues}>Cancel</Button>
-                                <Button type='submit' className='btn btn-warning mx-2' onClick={this.submitQues}>Submit</Button>
-                            </div>
-                        </ModalFooter>
-                    </Modal>
-                    // : alert("Retry with correct credentials")}
-                    //  </>
+                    <>
+                        {this.state.currentUser.email === this.state.userDetails.email && this.state.currentUser.password === this.state.userDetails.password ?
+                            <Modal size='xl' centered show={this.handleShow} onHide={() => { this.setState({ isQuestionsVisible: false }) }} >
+                                <ModalHeader closeButton>
+                                    <ModalTitle >
+                                        Questionnaire
+                                    </ModalTitle>
+                                </ModalHeader>
+                                <ModalBody>
+                                    <Container fluid="md">
+                                        {this.state.questions.map((ques, idx) => {
+                                            return (
+                                                <div key={idx}>
+                                                    <Row>
+                                                        <Col className='md-12 q'>
+                                                            <label><b>{ques.text}</b></label>
+                                                        </Col>
+                                                    </Row>
+                                                    <br />
+                                                    <Row key={idx} xs={2} md={4} className='justify-content-center'>
+                                                        {ques.optn.map(option => {
+                                                            return (
+                                                                <Col className='d-inline align-items-md-center op'>
+                                                                    <input checked={option.selected} type="radio" onClick={() => this.optionSelect(ques.id, option.seq)}></input>
+                                                                    <label onClick={() => this.optionSelect(ques.id, option.seq)}>{option.op}</label>
+                                                                </Col>
+                                                            )
+                                                        })}
+                                                    </Row>
+                                                </div>
+                                            )
+                                        })}
+                                    </Container>
+                                </ModalBody>
+                                <ModalFooter>
+                                    <div className="d-flex flex-row-reverse align-content-end">
+                                        <Button className='btn btn-secondary' onClick={this.handleClose}>Cancel</Button>
+                                        <Button type='submit' className='btn btn-warning mx-2' onClick={this.questSubmit}>Submit</Button>
+                                    </div>
+                                </ModalFooter>
+                            </Modal>
+                            : null}
+                    </>
                     : null}
             </div>
         )

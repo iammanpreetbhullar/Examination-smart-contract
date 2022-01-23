@@ -5,6 +5,20 @@
     display: block;    
     min-width: 100%;
 }
+
+#option1, #option2, #option3, #option4{
+    margin-right: 10px;
+}
+.q{
+    font-size: 18px;
+}
+.op{
+    font-size: 18px;
+}
+
+.uploadBtn{
+    margin-left: 20px;
+}
 /*
 .row{
     display: flex;
