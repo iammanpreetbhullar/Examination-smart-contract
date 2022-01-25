@@ -6,16 +6,13 @@ contract IeltsContract {
 
    string[]  myString;
 
-    function getArray() public returns (
-        string[] memory) {   
-            myString = ["manu"];        
+    function getArray() public view returns (
+        string[] memory) {         
             return myString;
         }  
 
-    function push_array(string memory ques, string memory opt) public {      
-        myString.push(ques);
-        myString.push(opt);     
-       
+    function push_array(string memory ans) public {      
+        myString.push(ans);            
     }
 
 }
