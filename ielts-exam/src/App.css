@@ -32,7 +32,17 @@
 .uploadBtn{
     padding-right: 10px;
 }
-.bodyBtn {
-    width: 140px;
-    background-color: yellow;
-};
+table{
+    width: 100%;
+    border: 2px solid gray;
+}
+table th{
+    border: 2px solid gray;
+    padding: 8px;
+    background-color: #0fb2df;
+    color: #fff;
+}
+table td{
+    border: 2px solid gray;
+    padding: 8px;
+}

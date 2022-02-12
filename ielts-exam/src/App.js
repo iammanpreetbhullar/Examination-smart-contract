@@ -18,16 +18,47 @@ class App extends React.Component {
             isSignUpVisible: false,
             isQuestionsVisible: false,
             isAlertVisible: false,
-            userDetails:
-            {
-                "firstName": "Manpreet",
-                "lastName": "Singh",
-                "email": "manpreet@mymail.com",
-                "password": "1234"
-            },
+            userDetails: [
+                {
+                    "id": 1001,
+                    "firstName": "Manpreet",
+                    "lastName": "Singh",
+                    "email": "manpreet@mymail.com",
+                    "password": "1234",
+                    "type": "admin"
+                },
+                {
+                    "id": 2001,
+                    "firstName": "Harpreet",
+                    "lastName": "Singh",
+                    "email": "harpreet@mymail.com",
+                    "password": "1234",
+                    "type": "user"
+                },
+                {
+                    "id": 2002,
+                    "firstName": "Gurpreet",
+                    "lastName": "Singh",
+                    "email": "gurpreet@mymail.com",
+                    "password": "1234",
+                    "type": "user"
+                },
+                {
+                    "id": 2003,
+                    "firstName": "Rajwinder",
+                    "lastName": "Kaur",
+                    "email": "rajwinder@mymail.com",
+                    "password": "1234",
+                    "type": "user"
+                },
+            ],
             currentUser: {
+                "id": 0,
+                "firstName": "",
+                "lastName": "",
                 "email": "",
-                "password": ""
+                "password": "",
+                "type": ""
             },
             questions: [
                 {
@@ -150,12 +181,23 @@ class App extends React.Component {
             resultBtnHide: true,
             resultModalShow: false,
             selectedQues: [],
+            selectedAns: "",
             loggedInAsDisabled: true,
             currentAcc: "",
             contracts: "",
             contractResult: [],
             navLinksHide: false,
-            noteHide: true
+            noteHide: true,
+            getResultHidden: false,
+            inputHidden: true,
+            inputId: { "id": 0 },
+            resultById: {},
+            allResultBtnHidden: true,
+            resultByIdModalShow: false,
+            testArray: [],
+            newArray: [],
+            allResultModalShow: false,
+            allResult: []
         }
     }
 
@@ -170,19 +212,43 @@ class App extends React.Component {
 
         const contract = new web3.eth.Contract(Cont_ABI, Cont_Addr);
         this.setState({ contracts: contract })
-
-        this.getArrayValues();
     }
 
-    getArrayValues = async () => {
+
+    getStudentMarks = async (id) => {
         const contract = this.state.contracts;
-        const getValues = await contract.methods.getArray().call();
-        this.setState({ contractResult: getValues })
-        console.log(getValues)
+        const { contractResult } = this.state;
+        let answers = "";
+        let studentName = "";
+        await contract.methods.getStudentMarks(id).call()
+            .then(res => (studentName = res.Name, answers = res.Answers))
+        let newArray = [];
+        newArray = Array.from(answers.split(", "));
+        contractResult.push({ "Name": studentName, "Answers": newArray })
+        this.setState({ contractResult });
+    }
+
+
+    getAllResults = async () => {
+        const { allResult } = this.state
+        const contract = this.state.contracts;
+        await contract.methods.getAllStudentsMarks().call()
+            .then(res =>
+                allResult.push({ "ids": res.ids, "names": res.names, "ans": res.answers })
+            )
+        let newArray = [];
+        for (let i = 0; i < allResult[0].ids.length; i++) {
+            newArray.push({ "id": allResult[0].ids[i], "name": allResult[0].names[i], "ans": allResult[0].ans[i] })
+        }
+        this.setState({ allResult: newArray })
+    }
+
+    showCompletResult = () => {
+        this.setState({ allResultModalShow: true })
     }
 
     showLoginModal = () => {
-        this.setState({ isLoginVisible: true })
+        this.setState({ isLoginVisible: true, inputHidden: true, getResultHidden: false })
     }
 
     showSignUpModal = () => {
@@ -192,12 +258,7 @@ class App extends React.Component {
     handleShow = () => this.setState({ showModal: true })
 
     handleClose = () => {
-        this.setState({ showModal: false })
-        this.setState({ isAlertVisible: false })
-        this.setState({ isLoginVisible: false })
-        this.setState({ isSignUpVisible: false })
-        this.setState({ isQuestionsVisible: false })
-        this.setState({ resultModalShow: false })
+        this.setState({ showModal: false, isAlertVisible: false, isLoginVisible: false, isSignUpVisible: false, isQuestionsVisible: false, resultModalShow: false, resultByIdModalShow: false, allResultModalShow: false })
     }
 
     handlechange = (event) => {
@@ -229,11 +290,20 @@ class App extends React.Component {
             })
         })
         this.setState({ uploadHidden: false })
+        this.concatAnswers();
         this.handleClose();
     }
 
+    concatAnswers = () => {
+        let { selectedAns } = this.state;
+        this.state.selectedQues.map((ans) => {
+            selectedAns = selectedAns.concat(ans.ques + " - " + ans.op + ", ");
+        })
+
+        this.setState({ selectedAns })
+    }
     optionSelect = (qId, opId) => {
-        let questions = this.state.questions;
+        let { questions } = this.state;
         questions.map(quest => {
             if (quest.id === qId) {
                 quest.answered = true;
@@ -253,21 +323,27 @@ class App extends React.Component {
     }
 
     login = () => {
-        const values = this.state.contractResult;
-        values.map(value => {
-            if (value !== "" && value !== null) {
-                this.setState({ quesBtnDisabled: true })
-            }
-            else {
-                this.setState({ quesBtnDisabled: false })
-            }
+        const currentUser = this.state.currentUser;
+        const loggedInUser = this.state.userDetails.find(({ email }) => email === currentUser.email);
+
+        this.setState({
+            currentUser: loggedInUser
         })
+
+        // const { contractResult } = this.state;
+        // contractResult.map(value => {
+        //     if (value !== "" && value !== null) {
+        //         this.setState({ quesBtnDisabled: true })
+        //     }
+        //     else {
+        //         this.setState({ quesBtnDisabled: false })
+        //     }
+        // })
+        // console.log(this.state.contractResult)
         this.setState({ quesBtnHide: false },
             () => { this.setState({ isLoginVisible: false }) });
-        this.setState({ loggedInAsDisabled: false });
-        this.setState({ resultBtnHide: false })
-        this.setState({ logOutHidden: false })
-        this.setState({ navLinksHide: true })
+        this.setState({ loggedInAsDisabled: false, logOutHidden: false, allResultBtnHidden: false, navLinksHide: true, getResultHidden: true })
+        this.getAllResults();
         setTimeout(() => {
             if (this.state.quesBtnDisabled !== false) {
                 this.setState({ noteHide: false })
@@ -276,42 +352,75 @@ class App extends React.Component {
     }
 
     showQuestions = () => {
+        console.log(this.state.currentUser)
         this.setState({ isQuestionsVisible: true })
     }
 
     resultHandle = () => {
-        this.state.contractResult.map(result => {
+        console.log(this.state.contractResult)
 
-            console.log(result)
-        })
         this.setState({ resultModalShow: true })
     }
 
-    callContract = () => {
+    callContract = async () => {
         const contract = this.state.contracts;
-        this.state.selectedQues.map(async (ans) => {
-            let answer = ans.ques + " - " + ans.op;
-            const updateArray = await contract.methods.push_array(answer).send({ from: this.state.currentAcc })
-                .once('receipt', (receipt) => {
-                    console.log(receipt)
-                })
-        })
+        const id = this.state.currentUser.id;
+        const name = this.state.currentUser.firstName + " " + this.state.currentUser.lastName;
+        const finalAns = this.state.selectedAns.slice(0, -2);
+        await contract.methods.addMarks(id, name, finalAns).send({ from: this.state.currentAcc, gas: 3000000 })
+            .once('receipt', (receipt) => {
+                console.log(receipt)
+            })
+
         setTimeout(() => {
-            this.getArrayValues();
+            this.getStudentMarks(id)
         }, 1000);
 
-        this.setState({ uploadDisabled: true })
+        this.setState({ uploadDisabled: true, quesBtnDisabled: true, resultBtnHide: false })
+    }
+
+    showInput = () => {
+        this.setState({ inputHidden: false, getResultHidden: true })
+    }
+
+    getresult = () => {
+        this.getStudentMarks();
+    }
+
+    handleInput = (event) => {
+        const { id, value } = event.target;
+        const copy = this.state.inputId;
+        copy[id] = value;
+        this.setState({ inputId: copy })
+    }
+
+    showResultOfId = async () => {
+        const inputId = parseInt(this.state.inputId.id);
+        const contract = this.state.contracts;
+        await contract.methods.getStudentMarks(inputId).call()
+            .then(res => {
+                this.setState({ resultById: { "Name": res.Name, "Answers": res.Answers } })
+            })
+
+        this.setState({ resultByIdModalShow: true })
+        setTimeout(() => {
+
+            console.log(this.state.resultById)
+        }, 1000);
+
     }
 
     logOut = () => {
         window.location.reload();
     }
 
+
     render() {
+        const { currentUser } = this.state;
         return (
             <div className='appMainDiv'>
                 <Navbar bg="warning" variant="light">
-                    <img src={logo} height='50px' />
+                    <img src={logo} alt="logo" height='50px' />
                     <Navbar.Brand >IELTS Online Examination</Navbar.Brand>
                     <Nav hidden={this.state.navLinksHide} className="me-auto">
                         <Nav.Link onClick={this.showLoginModal}>Login</Nav.Link>
@@ -320,7 +429,7 @@ class App extends React.Component {
                     <Navbar.Toggle />
                     <Navbar.Collapse className="justify-content-end">
                         <Navbar.Text hidden={this.state.loggedInAsDisabled}>
-                            Logged In as:  <b>{this.state.currentUser.email}</b>
+                            Logged In as:  <b>{currentUser.firstName + " " + currentUser.lastName}</b>
                         </Navbar.Text>
                     </Navbar.Collapse>
                     <div className='uploadBtn'>
@@ -329,18 +438,26 @@ class App extends React.Component {
                     </div>
                 </Navbar>
                 <div className='d-flex align-items-center justify-content-around' style={{ height: "90vh" }}>
-                    <div><img src={img} style={{ border: "3px solid white", borderRadius: "50px", boxShadow: "0px 0px 20px 0px white" }} />
+                    <div><img src={img} alt="bodyImage" style={{ borderRadius: "50px", boxShadow: "0px 0px 20px 0px white" }} />
                     </div>
                     <div>
                         <div style={{ color: "white", width: "100%", fontSize: "60px", textAlign: "center", fontWeight: "bold" }}>
                             IELTS Online Exam
                         </div>
                         <div className='d-flex align-items justify-content-center'>
-                            <Button onClick={this.showQuestions} disabled={this.state.quesBtnDisabled} hidden={this.state.quesBtnHide} className='bodyBtn' variant='secondary'>Questionnaire</Button>
-                            <div style={{ padding: "10px" }}></div>
-                            <Button onClick={this.resultHandle} hidden={this.state.resultBtnHide} className='bodyBtn' variant='secondary'>Result</Button>
+                            <input className='me-2' id='id' type='text' placeholder='Your Registration ID' onChange={this.handleInput} hidden={this.state.inputHidden} />
+                            <Button onClick={this.showResultOfId} hidden={this.state.inputHidden} variant='secondary'>Show Result</Button>
+                            <Button onClick={this.showInput} hidden={this.state.getResultHidden} variant='secondary'>Get Result by ID</Button>
+                            {this.state.currentUser.type !== "admin" ?
+                                <div>
+                                    <Button onClick={this.showQuestions} disabled={this.state.quesBtnDisabled} hidden={this.state.quesBtnHide} className='me-2' variant='secondary'>Questionnaire</Button>
+                                    <Button onClick={this.resultHandle} hidden={this.state.resultBtnHide} variant='secondary'>Your submission</Button>
+                                </div>
+                                :
+                                <Button onClick={this.showCompletResult} hidden={this.state.allResultBtnHidden} className='bodyBtn me-2' variant='secondary'>All Result</Button>
+                            }
                         </div>
-                        <div className='d-flex justify-content-center' style={{ color: 'white', marginTop:'10px' }}>
+                        <div className='d-flex justify-content-center' style={{ color: 'white', marginTop: '10px' }}>
                             <p hidden={this.state.noteHide}><i>*Questionnaire has already been submitted for this user!</i></p>
                         </div>
                     </div>
@@ -451,7 +568,7 @@ class App extends React.Component {
                     : null}
                 {this.state.isQuestionsVisible !== false ?
                     <>
-                        {this.state.currentUser.email === this.state.userDetails.email && this.state.currentUser.password === this.state.userDetails.password ?
+                        {this.state.currentUser.type !== "admin" ?
                             <Modal size='xl' centered show={this.handleShow} onHide={() => { this.setState({ isQuestionsVisible: false }) }} >
                                 <ModalHeader className='modalHeader' closeButton>
                                     <ModalTitle className='modalTitle'>
@@ -470,10 +587,10 @@ class App extends React.Component {
                                                     </Row>
                                                     <br />
                                                     <Row key={idx} xs={2} md={4} className='justify-content-center'>
-                                                        {ques.optn.map(option => {
+                                                        {ques.optn.map((option, ind) => {
                                                             return (
-                                                                <Col className='d-inline align-items-md-center op'>
-                                                                    <input checked={option.selected} type="radio" onClick={() => this.optionSelect(ques.id, option.seq)}></input>
+                                                                <Col key={ind} className='d-inline align-items-md-center op'>
+                                                                    <input checked={option.selected} type="radio" onChange={() => this.optionSelect(ques.id, option.seq)}></input>
                                                                     <label className='options' onClick={() => this.optionSelect(ques.id, option.seq)}>{option.op}</label>
                                                                 </Col>
                                                             )
@@ -498,17 +615,25 @@ class App extends React.Component {
                     <Modal size='sm' centered show={this.handleShow} onHide={() => { this.setState({ resultModalShow: false }) }}>
                         <ModalHeader className='modalHeader' closeButton>
                             <ModalTitle>
-                                Result
+                                Your submission
                             </ModalTitle>
                         </ModalHeader>
                         <ModalBody>
-                            {this.state.contractResult.map((ans, idx) => {
+                            {this.state.contractResult.map((result, index) => {
                                 return (
-                                    <div className='resultsDiv'>
+                                    <div>
+                                        <div key={index}>
+                                            <div><b>Name: </b><span>{result.Name}</span></div>
+                                            <div><b>Answers: </b></div>
+                                        </div>
                                         <ul>
-                                            <li key={idx}>
-                                                <b>{ans}</b>
-                                            </li>
+                                            {result.Answers.map((ans, idx) => {
+                                                return (
+                                                    <div key={idx} className='resultsDiv'>
+                                                        <li>{ans}</li>
+                                                    </div>
+                                                )
+                                            })}
                                         </ul>
                                     </div>
                                 )
@@ -519,6 +644,58 @@ class App extends React.Component {
                         </ModalFooter>
                     </Modal>
                     : null}
+                {this.state.resultByIdModalShow !== false ?
+                    <Modal size='sm' centered show={this.handleShow} onHide={() => { this.setState({ resultByIdModalShow: false }) }}>
+                        <ModalHeader className='modalHeader' closeButton>
+                            <ModalTitle>
+                                Result of Id: {this.state.inputId.id}
+                            </ModalTitle>
+                        </ModalHeader>
+                        <ModalBody>
+                            <div>
+                                <div className='resultsDiv'><b>Name: </b><span>{this.state.resultById.Name}</span></div>
+                                <div className='resultsDiv'><b>Ans: </b><span>{this.state.resultById.Answers}</span></div>
+                            </div>
+                        </ModalBody>
+                        <ModalFooter>
+                            <Button className='btn btn-secondary' onClick={this.handleClose}>Close</Button>
+                        </ModalFooter>
+                    </Modal> : null
+                }
+                {this.state.allResultModalShow !== false ?
+                    <Modal size='lg' centered show={this.handleShow} onHide={() => { this.setState({ allResultModalShow: false }) }}>
+                        <ModalHeader className='modalHeader' closeButton>
+                            <ModalTitle>
+                                Complete Result
+                            </ModalTitle>
+                        </ModalHeader>
+                        <ModalBody>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Id</th>
+                                        <th>Student Name</th>
+                                        <th>Result</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {this.state.allResult.map((item, idx) => {
+                                        return (
+                                            <tr key={idx}>
+                                                <td>{item.id}</td>
+                                                <td>{item.name}</td>
+                                                <td>{item.ans}</td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
+                        </ModalBody>
+                        <ModalFooter>
+                            <Button className='btn btn-secondary' onClick={this.handleClose}>Close</Button>
+                        </ModalFooter>
+                    </Modal> : null
+                }
             </div>
         )
     }
