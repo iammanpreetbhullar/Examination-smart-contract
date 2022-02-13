@@ -194,10 +194,9 @@ class App extends React.Component {
             resultById: {},
             allResultBtnHidden: true,
             resultByIdModalShow: false,
-            testArray: [],
-            newArray: [],
             allResultModalShow: false,
-            allResult: []
+            allResult: [],
+            resultNoteHide: true
         }
     }
 
@@ -212,6 +211,7 @@ class App extends React.Component {
 
         const contract = new web3.eth.Contract(Cont_ABI, Cont_Addr);
         this.setState({ contracts: contract })
+        this.getAllResults();
     }
 
 
@@ -221,10 +221,10 @@ class App extends React.Component {
         let answers = "";
         let studentName = "";
         await contract.methods.getStudentMarks(id).call()
-            .then(res => (studentName = res.Name, answers = res.Answers))
+            .then(res => (studentName = res.Name, answers = res.Answers));
         let newArray = [];
         newArray = Array.from(answers.split(", "));
-        contractResult.push({ "Name": studentName, "Answers": newArray })
+        contractResult.push({ "Name": studentName, "Answers": newArray });
         this.setState({ contractResult });
     }
 
@@ -239,6 +239,9 @@ class App extends React.Component {
         let newArray = [];
         for (let i = 0; i < allResult[0].ids.length; i++) {
             newArray.push({ "id": allResult[0].ids[i], "name": allResult[0].names[i], "ans": allResult[0].ans[i] })
+        }
+        if (this.state.quesBtnDisabled !== false) {
+            this.setState({ noteHide: false })
         }
         this.setState({ allResult: newArray })
     }
@@ -279,7 +282,6 @@ class App extends React.Component {
 
     questSubmit = () => {
         let questions = this.state.questions;
-
         questions.map(quest => {
             quest.answered = true;
             quest.optn.map(option => {
@@ -302,6 +304,7 @@ class App extends React.Component {
 
         this.setState({ selectedAns })
     }
+
     optionSelect = (qId, opId) => {
         let { questions } = this.state;
         questions.map(quest => {
@@ -323,32 +326,21 @@ class App extends React.Component {
     }
 
     login = () => {
-        const currentUser = this.state.currentUser;
+        const { currentUser, allResult } = this.state;
         const loggedInUser = this.state.userDetails.find(({ email }) => email === currentUser.email);
-
         this.setState({
             currentUser: loggedInUser
+        });
+        allResult.map(item => {
+            if (loggedInUser.id.toString() === item.id) {
+                this.setState({ noteHide: false, quesBtnDisabled: true })
+            } else {
+                this.setState({ noteHide: true, quesBtnDisabled: false })
+            }
         })
-
-        // const { contractResult } = this.state;
-        // contractResult.map(value => {
-        //     if (value !== "" && value !== null) {
-        //         this.setState({ quesBtnDisabled: true })
-        //     }
-        //     else {
-        //         this.setState({ quesBtnDisabled: false })
-        //     }
-        // })
-        // console.log(this.state.contractResult)
         this.setState({ quesBtnHide: false },
             () => { this.setState({ isLoginVisible: false }) });
         this.setState({ loggedInAsDisabled: false, logOutHidden: false, allResultBtnHidden: false, navLinksHide: true, getResultHidden: true })
-        this.getAllResults();
-        setTimeout(() => {
-            if (this.state.quesBtnDisabled !== false) {
-                this.setState({ noteHide: false })
-            }
-        }, 200);
     }
 
     showQuestions = () => {
@@ -357,8 +349,6 @@ class App extends React.Component {
     }
 
     resultHandle = () => {
-        console.log(this.state.contractResult)
-
         this.setState({ resultModalShow: true })
     }
 
@@ -375,12 +365,15 @@ class App extends React.Component {
         setTimeout(() => {
             this.getStudentMarks(id)
         }, 1000);
-
         this.setState({ uploadDisabled: true, quesBtnDisabled: true, resultBtnHide: false })
     }
 
     showInput = () => {
         this.setState({ inputHidden: false, getResultHidden: true })
+    }
+
+    goBack = () => {
+        this.setState({ inputHidden: true, getResultHidden: false, resultNoteHide: true })
     }
 
     getresult = () => {
@@ -397,17 +390,17 @@ class App extends React.Component {
     showResultOfId = async () => {
         const inputId = parseInt(this.state.inputId.id);
         const contract = this.state.contracts;
+        const { allResult } = this.state;
+        let newId = allResult.find(item => this.state.inputId.id.toString() === item.id);
+        if (newId) {
+            this.setState({ resultByIdModalShow: true, resultNoteHide: true })
+        } else {
+            this.setState({ resultByIdModalShow: false, resultNoteHide: false })
+        }
         await contract.methods.getStudentMarks(inputId).call()
             .then(res => {
                 this.setState({ resultById: { "Name": res.Name, "Answers": res.Answers } })
             })
-
-        this.setState({ resultByIdModalShow: true })
-        setTimeout(() => {
-
-            console.log(this.state.resultById)
-        }, 1000);
-
     }
 
     logOut = () => {
@@ -424,7 +417,7 @@ class App extends React.Component {
                     <Navbar.Brand >IELTS Online Examination</Navbar.Brand>
                     <Nav hidden={this.state.navLinksHide} className="me-auto">
                         <Nav.Link onClick={this.showLoginModal}>Login</Nav.Link>
-                        <Nav.Link onClick={this.showSignUpModal}>Sign Up</Nav.Link>
+                        {/* <Nav.Link onClick={this.showSignUpModal}>Sign Up</Nav.Link> */}
                     </Nav>
                     <Navbar.Toggle />
                     <Navbar.Collapse className="justify-content-end">
@@ -444,9 +437,10 @@ class App extends React.Component {
                         <div style={{ color: "white", width: "100%", fontSize: "60px", textAlign: "center", fontWeight: "bold" }}>
                             IELTS Online Exam
                         </div>
-                        <div className='d-flex align-items justify-content-center'>
+                        <div className='d-flex justify-content-center'>
                             <input className='me-2' id='id' type='text' placeholder='Your Registration ID' onChange={this.handleInput} hidden={this.state.inputHidden} />
-                            <Button onClick={this.showResultOfId} hidden={this.state.inputHidden} variant='secondary'>Show Result</Button>
+                            <Button className='me-2' onClick={this.showResultOfId} hidden={this.state.inputHidden} variant='warning'>Show Result</Button>
+                            <Button onClick={this.goBack} hidden={this.state.inputHidden} variant='secondary'>Go Back</Button>
                             <Button onClick={this.showInput} hidden={this.state.getResultHidden} variant='secondary'>Get Result by ID</Button>
                             {this.state.currentUser.type !== "admin" ?
                                 <div>
@@ -458,10 +452,14 @@ class App extends React.Component {
                             }
                         </div>
                         <div className='d-flex justify-content-center' style={{ color: 'white', marginTop: '10px' }}>
+                            <p hidden={this.state.resultNoteHide}><i>Kindly enter the correct Registration ID!</i></p>
+                        </div>
+                        <div className='d-flex justify-content-center' style={{ color: 'white', marginTop: '10px' }}>
                             <p hidden={this.state.noteHide}><i>*Questionnaire has already been submitted for this user!</i></p>
                         </div>
                     </div>
                 </div>
+                {/* <<<<<<<<<<<< Login Modal >>>>>>>>>>>>>> */}
                 {this.state.isLoginVisible !== false ?
                     <div>
                         <Modal size='md' aria-labelledby="contained-modal-title-vcenter"
@@ -504,6 +502,7 @@ class App extends React.Component {
                         </Modal>
                     </div>
                     : null}
+                    {/* <<<<<<<<<< Sign Up Modal >>>>>>>>>> */}
                 {this.state.isSignUpVisible !== false ?
                     <Modal size='md' aria-labelledby="contained-modal-title-vcenter"
                         centered show={this.handleShow} onHide={() => { this.setState({ isSignUpVisible: false }) }} >
@@ -566,6 +565,7 @@ class App extends React.Component {
                         </ModalBody>
                     </Modal>
                     : null}
+                    {/* <<<<<<<<< Questionnaire Modal >>>>>>>>>> */}
                 {this.state.isQuestionsVisible !== false ?
                     <>
                         {this.state.currentUser.type !== "admin" ?
@@ -611,6 +611,7 @@ class App extends React.Component {
                             : null}
                     </>
                     : null}
+                    {/* <<<<<<<< Your submission Modal >>>>>>>>> */}
                 {this.state.resultModalShow !== false ?
                     <Modal size='sm' centered show={this.handleShow} onHide={() => { this.setState({ resultModalShow: false }) }}>
                         <ModalHeader className='modalHeader' closeButton>
@@ -644,6 +645,7 @@ class App extends React.Component {
                         </ModalFooter>
                     </Modal>
                     : null}
+                    {/* <<<<<<<<<<<< Get result by Id Modal >>>>>>>>>>> */}
                 {this.state.resultByIdModalShow !== false ?
                     <Modal size='sm' centered show={this.handleShow} onHide={() => { this.setState({ resultByIdModalShow: false }) }}>
                         <ModalHeader className='modalHeader' closeButton>
@@ -662,6 +664,7 @@ class App extends React.Component {
                         </ModalFooter>
                     </Modal> : null
                 }
+                {/* <<<<<<<<<< All results Modal >>>>>>>>>> */}
                 {this.state.allResultModalShow !== false ?
                     <Modal size='lg' centered show={this.handleShow} onHide={() => { this.setState({ allResultModalShow: false }) }}>
                         <ModalHeader className='modalHeader' closeButton>
